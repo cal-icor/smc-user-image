@@ -2,10 +2,11 @@
 # Dockerfile for Unminimized Linux and other tools
 # Base image: Official Ubuntu-based Jupyter foundation stack
 #
-
 FROM quay.io/jupyter/base-notebook:latest
 
-LABEL description="Unminimized Linux Ubuntu environment with limited VS Code support."
+LABEL org.opencontainers.image.authors="CloudBank Classroom" \
+      version="1.0" \
+      description="Unminimized Linux Ubuntu environment with limited VS Code support."
 
 USER root
 
@@ -14,16 +15,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV NB_USER=jovyan
 ENV NB_UID=1000
 ENV SHELL=/bin/bash
-
-# Set up jovyan similar to existing image
-# Modify existing user/group or || create them if they do not exist
-RUN groupmod -g 1000 ${NB_USER} || groupadd -g 1000 ${NB_USER} && \
-    usermod -u 1000 -g ${NB_USER} ${NB_USER} || useradd -u 1000 -g ${NB_USER} -m -s /bin/bash ${NB_USER}
-    
-# Create an ${NB_USER} sudo configuration file using '>'
-RUN echo "${NB_USER} ALL=(ALL:ALL) NOPASSWD:ALL" > /etc/sudoers.d/${NB_USER}_sudo && \
-    chmod 0440 /etc/sudoers.d/${NB_USER}_sudo
-
+ENV SUDOERS_CUSTOM_FILE=/etc/sudoers.d/${NB_USER}_sudo
+ENV BASH_CUSTOM=/etc/bash.bashrc
+ 
 # Get apt packages and unminimize Ubuntu
 RUN apt-get update -y && apt-get -qq install -y --no-install-recommends \
     unminimize \
@@ -34,102 +28,17 @@ RUN apt-get update -y && apt-get -qq install -y --no-install-recommends \
     
 # Refer to README.md for additional packages installed, apt skips if already installed
 RUN apt-get -qq update -y && apt-get -qq install -y --no-install-recommends \
-    bash \
-    findutils \ 
-    grep \
-    sed \
-    gawk \
-    diffutils \
-    patch \
-    less \
-    nano \
-    vim \
-    emacs \
-    aspell \
-    file \
-    landscape-common \
-    man-db \
-    manpages \
-    manpages-dev \
-    info \
-    groff \ 
-    tar \
-    gzip \
-    bzip2 \
-    xz-utils \ 
-    zip \
-    unzip \
-    cpio \
-    sudo \
-    passwd \
-    libpam-modules \ 
-    pamtester \
-    acl \
-    attr \
-    procps \
-    psmisc \
-    htop \
-    atop \
-    iotop \
-    lsof \
-    strace \
-    ltrace \
-    sysstat \
-    pciutils \
-    usbutils \
-    lsscsi \
-    sg3-utils \
-    hdparm \
-    udev \
-    parted \
-    fdisk \
-    gdisk \
-    e2fsprogs \ 
-    dosfstools \ 
-    xfsprogs \
-    btrfs-progs \ 
-    squashfs-tools \ 
-    lvm2 \
-    mdadm \
-    systemd \
-    systemd-sysv \
-    cron \
-    logrotate \
-    rsyslog \
-    iproute2 \
-    net-tools \
-    iputils-ping \
-    traceroute \
-    dnsutils \
-    tcpdump \
-    netcat-openbsd \ 
-    nmap \
-    openssh-client \
-    openssh-server \
-    sshfs \
-    cifs-utils \
-    nfs-common \
-    rsync \
-    curl \
-    wget \
-    build-essential \ 
-    gcc \
-    g++ \
-    make \
-    autoconf \
-    automake \
-    pkg-config \
-    cmake \
-    git \
-    flex \
-    bison \
-    gdb \
-    valgrind \
-    clangd \
-    texlive-xetex \ 
-    texlive-fonts-recommended \ 
-    texlive-plain-generic \
-    pandoc \ 
+    bash findutils grep sed gawk diffutils patch less nano vim emacs aspell file landscape-common \
+    man-db manpages manpages-dev info groff \ 
+    tar gzip bzip2 xz-utils zip unzip cpio \
+    sudo passwd libpam-modules pamtester acl attr \
+    procps psmisc htop atop iotop lsof strace ltrace sysstat \
+    pciutils usbutils lsscsi sg3-utils hdparm udev \
+    parted fdisk gdisk e2fsprogs dosfstools xfsprogs btrfs-progs squashfs-tools lvm2 mdadm \
+    systemd systemd-sysv cron logrotate rsyslog \
+    iproute2 net-tools iputils-ping traceroute dnsutils tcpdump netcat-openbsd nmap openssh-client openssh-server sshfs cifs-utils nfs-common rsync curl wget \
+    build-essential gcc g++ make autoconf automake pkg-config cmake git flex bison gdb valgrind clangd \
+    texlive-xetex texlive-fonts-recommended texlive-plain-generic pandoc \ 
     && apt-get clean && rm -rf /var/lib/apt/lists/*
     
 # Install code-server (VS Code in browser)
@@ -140,15 +49,6 @@ RUN mandb -c || true
 
 USER ${NB_USER}
 WORKDIR /home/${NB_USER}
-
-# Set default user environment variables in bashrc
-RUN echo '# Course Environment Customizations' >> ~/.bashrc \
-    && echo 'export PATH="${HOME}/bin:${PATH}"' >> ~/.bashrc \
-    && echo 'export EDITOR="vim"' >> ~/.bashrc \
-    && echo 'export VISUAL="vim"' >> ~/.bashrc \
-    && echo 'export PAGER="less"' >> ~/.bashrc \
-    && echo 'alias ls="ls --color=auto"' >> ~/.bashrc \
-    && echo 'alias ll="ls -alF"' >> ~/.bashrc
 
 # install C++ kernel xeus (bloated, clean up kernels)
 RUN mamba install -c conda-forge xeus-cpp jupyterlab -y
@@ -173,6 +73,29 @@ RUN pip install --no-cache-dir jupyter-server-proxy jupyter-vscode-proxy \
     
 # RUN bash conda deactivate
 ENV CONDA_AUTO_ACTIVATE_BASE=false
+   
+USER root
+# Set up jovyan similar to existing image
+# Modify existing user/group or || create them if they do not exist
+RUN groupmod -g 1000 ${NB_USER} || groupadd -g 1000 ${NB_USER} \
+    && usermod -u 1000 -g ${NB_USER} ${NB_USER} || useradd -u 1000 -g ${NB_USER} -m -s /bin/bash ${NB_USER}
+    
+# Allow NB_USER (joyvan) to run set of user/group workstation administration utilities and apt/apt-get, excluding /usr/bin/passwd 
+RUN echo "${NB_USER} ALL=(ALL:ALL) NOPASSWD: /usr/sbin/useradd, /usr/sbin/userdel, /usr/sbin/usermod, /usr/sbin/groupadd, /usr/sbin/groupdel, /usr/sbin/groupmod, /usr/bin/apt-get, /usr/bin/apt" \
+    > ${SUDOERS_CUSTOM_FILE} \
+    && chmod 0440 ${SUDOERS_CUSTOM_FILE}
+
+# Set default user environment variables in /etc/bash.bashrc
+# Noted .bashrc volatile on deployment
+RUN echo '# Course Environment Customizations' >> ${BASH_CUSTOM} \
+    && echo 'export PATH="${HOME}/bin:${PATH}"' >> ${BASH_CUSTOM} \
+    && echo 'export EDITOR="vim"' >> ${BASH_CUSTOM} \
+    && echo 'export VISUAL="vim"' >> ${BASH_CUSTOM} \
+    && echo 'export PAGER="less"' >> ${BASH_CUSTOM} \
+    && echo 'alias ls="ls --color=auto"' >> ${BASH_CUSTOM} \
+    && echo 'alias ll="ls -alF"' >> ${BASH_CUSTOM}
+ 
+USER ${NB_USER}
 RUN rm -rf work
 
 EXPOSE 8888
