@@ -32,7 +32,7 @@ Jupyter lab image with Ubuntu Linux unminimized. Also includes vs-code. Inherits
 
 If Dockerfile exists in the repo, repo2docker will ignore the apt.txt and postBuild configuration files. 
 
-Refer to the cal-icor/base-user-image repository's [CONTRIBUTING.md](https://github.com/cal-icor/base-user-image/blob/main/CONTRIBUTING.md) for further instructions on creating a custom image. 
+Refer to this repository's [CONTRIBUTING.md](https://github.com/cal-icor/base-user-image/blob/main/CONTRIBUTING.md) documentaion for instructions on getting started with creating a custom image. 
 
 ## Building the image locally
 
