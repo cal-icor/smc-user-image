@@ -5,8 +5,7 @@
 
 FROM quay.io/jupyter/base-notebook:latest
 
-LABEL maintainer="CS41-Linux" \
-      description="Unminimized Linux Ubuntu environment with limited VS Code support."
+LABEL description="Unminimized Linux Ubuntu environment with limited VS Code support."
 
 USER root
 
