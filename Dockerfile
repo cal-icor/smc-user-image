@@ -40,7 +40,14 @@ RUN apt-get -qq update -y && apt-get -qq install -y --no-install-recommends \
     build-essential gcc g++ make autoconf automake pkg-config cmake git flex bison gdb valgrind clangd \
     texlive-xetex texlive-fonts-recommended texlive-plain-generic pandoc \ 
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-    
+
+# eMudhra CA distrust. No fixed ca-certificates for 26.04 yet, so deselect the
+# root the noble fix (20260816) dropped. Remove once resolute ships one.
+RUN apt-get -qq update -y && apt-get -qq install -y --only-upgrade ca-certificates \
+    && sed -i 's|^mozilla/emSign_ECC_Root_CA_-_G3.crt$|!&|' /etc/ca-certificates.conf \
+    && update-ca-certificates --fresh \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Install code-server (VS Code in browser)
 RUN curl -fsSL https://code-server.dev/install.sh | sh
 
@@ -52,6 +59,9 @@ WORKDIR /home/${NB_USER}
 
 # install C++ kernel xeus (bloated, clean up kernels)
 RUN mamba install -c conda-forge xeus-cpp jupyterlab -y
+
+# eMudhra CA distrust
+RUN mamba install -y "ca-certificates>=2026.10.19" "certifi>=2026.10.19"
 
 # keep xc17
 RUN rm -rf /opt/conda/share/jupyter/kernels/xc11 \
