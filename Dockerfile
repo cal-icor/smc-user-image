@@ -60,8 +60,8 @@ WORKDIR /home/${NB_USER}
 # install C++ kernel xeus (bloated, clean up kernels)
 RUN mamba install -c conda-forge xeus-cpp jupyterlab -y
 
-# eMudhra CA distrust
-RUN mamba install -y "ca-certificates>=2026.10.19" "certifi>=2026.10.19"
+# eMudhra CA distrust, HTTP2Shell
+RUN mamba install -y "ca-certificates>=2026.10.19" "certifi>=2026.10.19" "brotli-python>=1.2.1"
 
 # keep xc17
 RUN rm -rf /opt/conda/share/jupyter/kernels/xc11 \
